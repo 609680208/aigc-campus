@@ -1,0 +1,29 @@
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY prisma ./prisma
+RUN npx prisma generate
+COPY tsconfig*.json nest-cli.json ./
+COPY src ./src
+# 生产构建：禁用 source map
+RUN sed -i 's/"sourceMap": true/"sourceMap": false/' tsconfig.json || true
+RUN npm run build
+# 删除 source map 和声明文件，防止源码泄露
+RUN find dist -name "*.map" -delete 2>/dev/null || true
+RUN find dist -name "*.d.ts" -delete 2>/dev/null || true
+
+FROM node:20-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+# 安装 OpenSSL（Prisma 运行时依赖）
+RUN apk add --no-cache openssl
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY --from=build /app/dist ./dist
+COPY prisma ./prisma
+RUN npx prisma generate
+# 最终清理：确保无 source map 残留
+RUN find . -name "*.map" -not -path "./node_modules/*" -delete 2>/dev/null || true
+EXPOSE 3000
+CMD ["sh", "-c", "npx prisma db push --skip-generate && npx prisma db seed && node dist/main.js"]

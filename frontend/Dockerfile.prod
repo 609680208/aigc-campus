@@ -1,0 +1,15 @@
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+# Vite 生产构建默认不生成 source map，确保不泄露源码
+RUN npm run build
+
+FROM nginx:alpine
+# 只复制编译产物，不复制源码
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+# 清理可能的 map 文件
+RUN find /usr/share/nginx/html -name "*.map" -delete 2>/dev/null || true
+EXPOSE 80

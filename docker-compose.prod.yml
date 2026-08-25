@@ -1,0 +1,52 @@
+# 生产环境 docker-compose（部署时使用预构建镜像，不暴露源码）
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aigc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-aigc_campus}
+    # 不对外暴露端口，只在 docker 内部网络通信
+    expose:
+      - "5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: aigc-campus-backend:prod
+    container_name: aigc-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-aigc_campus}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      SSO_SECRET: ${SSO_SECRET:-}
+    # 不对外暴露端口，通过 nginx 反代访问
+    expose:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    image: aigc-campus-frontend:prod
+    container_name: aigc-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8088:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AdminSubRole {
+  TEACHER
+  LEADER
+}
+
+enum ModelType {
+  TEXT
+  TXT2IMG
+  IMG2IMG
+  TXT2VIDEO
+  IMG2VIDEO
+  AUDIO
+}
+
+enum ModelLoc {
+  CLOUD
+  LOCAL
+}
+
+enum WorkType {
+  TEXT
+  TXT2IMG
+  IMG2IMG
+  TXT2VIDEO
+  IMG2VIDEO
+  AUDIO
+  CANVAS
+}
+
+enum WorkStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+}
+
+model User {
+  id           String        @id @default(cuid())
+  username     String        @unique
+  password     String
+  name         String
+  role         UserRole      @default(STUDENT)
+  adminSubRole AdminSubRole?
+  classId      String?
+  class        Class?        @relation(fields: [classId], references: [id])
+  quotaBalance Int           @default(100)
+  // ----- OPC 平台对接字段 -----
+  opcUserId    String?       @unique // OPC 平台用户 ID（注册时同步创建）
+  ssoToken     String?       @unique // 我方签发的永久 SSO token，随 SSO 链接校验
+  apiKey       String?       // genzhi 平台 API Key（SSO 进入时带入，模型调用使用）
+  teamId       String?       // OPC 团队 ID
+  teamTaskId   String?       // OPC 任务 ID（最近一次 SSO 带入）
+  works        Work[]
+  quotaLogs    QuotaLog[]
+  auditLogs    AuditLog[]
+  approvals    Approval[]    @relation("requestedBy")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Class {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  grade     String?
+  createdAt DateTime @default(now())
+  students  User[]
+}
+
+model Model {
+  id        String       @id @default(cuid())
+  name      String
+  type      ModelType
+  loc       ModelLoc     @default(CLOUD)
+  cost      Int          @default(1)
+  enabled   Boolean      @default(true)
+  provider  String       @default("OPENAI")
+  apiKey    String?
+  baseUrl   String?
+  externalId String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  works     Work[]
+
+  @@unique([name, type])
+}
+
+model Work {
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  modelId    String?
+  model      Model?      @relation(fields: [modelId], references: [id])
+  type       WorkType
+  prompt     String
+  status     WorkStatus  @default(PENDING)
+  resultText String?
+  resultUrl  String?
+  cost       Int         @default(0)
+  error      String?
+  createdAt  DateTime    @default(now())
+
+  @@index([userId])
+}
+
+model QuotaLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  amount    Int
+  reason    String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model Approval {
+  id          String   @id @default(cuid())
+  requesterId String
+  requester   User     @relation("requestedBy", fields: [requesterId], references: [id])
+  approverId  String?
+  type        String
+  amount      Int      @default(0)
+  reason      String?
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+}
