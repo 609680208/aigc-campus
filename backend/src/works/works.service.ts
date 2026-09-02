@@ -1,13 +1,11 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { WorkType } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { AiService } from '../ai/ai.service';
-import { typeLabel } from '../ai/providers';
 
 @Injectable()
 export class WorksService {
@@ -40,9 +38,7 @@ export class WorksService {
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('用户不存在');
-    if (user.quotaBalance < model.cost) {
-      throw new ForbiddenException('算力配额不足，请联系管理员充值');
-    }
+    // 算力计费在中转站平台侧，本系统不做余额校验与扣减，cost 仅作展示
 
     const work = await this.prisma.work.create({
       data: {
@@ -67,27 +63,13 @@ export class WorksService {
         // genzhi 平台按用户维度计费：使用当前用户 SSO 带入的 apikey 调用模型
         userApiKey: user.apiKey || undefined,
       });
-      return await this.prisma.$transaction(async (tx) => {
-        const updated = await tx.work.update({
-          where: { id: work.id },
-          data: {
-            status: 'SUCCEEDED',
-            resultText: result.resultText ?? null,
-            resultUrl: result.resultUrl ?? null,
-          },
-        });
-        await tx.user.update({
-          where: { id: userId },
-          data: { quotaBalance: { decrement: model.cost } },
-        });
-        await tx.quotaLog.create({
-          data: {
-            userId,
-            amount: -model.cost,
-            reason: `${typeLabel(type)} · ${model.name}`,
-          },
-        });
-        return updated;
+      return await this.prisma.work.update({
+        where: { id: work.id },
+        data: {
+          status: 'SUCCEEDED',
+          resultText: result.resultText ?? null,
+          resultUrl: result.resultUrl ?? null,
+        },
       });
     } catch (e: any) {
       const raw = e?.message || '生成失败';

@@ -1,5 +1,4 @@
-export type Role = 'STUDENT' | 'ADMIN' | 'SUPER_ADMIN';
-export type AdminSubRole = 'TEACHER' | 'LEADER' | null;
+export type Role = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
 export type ModelType = 'TEXT' | 'TXT2IMG' | 'IMG2IMG' | 'TXT2VIDEO' | 'IMG2VIDEO';
 
 export interface User {
@@ -7,10 +6,6 @@ export interface User {
   username: string;
   name: string;
   role: Role;
-  adminSubRole: AdminSubRole;
-  classId?: string | null;
-  class?: { id: string; name: string } | null;
-  quotaBalance: number;
   /** OPC 平台用户 ID，有值即为 SSO 账号 */
   opcUserId?: string | null;
   createdAt?: string;
@@ -42,13 +37,6 @@ export interface Work {
   createdAt: string;
 }
 
-export interface ClassItem {
-  id: string;
-  name: string;
-  grade?: string | null;
-  _count?: { students: number };
-}
-
 export type WorkType = 'TEXT' | 'TXT2IMG' | 'IMG2IMG' | 'TXT2VIDEO' | 'IMG2VIDEO' | 'CANVAS';
 
 export const MODEL_TYPE_LABEL: Record<ModelType, string> = {
@@ -60,7 +48,7 @@ export const MODEL_TYPE_LABEL: Record<ModelType, string> = {
 };
 
 export const ROLE_LABEL: Record<Role, string> = {
-  STUDENT: '学生·普通',
+  USER: '用户',
   ADMIN: '管理员',
   SUPER_ADMIN: '超级管理员',
 };

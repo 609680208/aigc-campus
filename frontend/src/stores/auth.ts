@@ -19,14 +19,10 @@ export const useAuthStore = defineStore('auth', {
     role: (s) => s.user?.role || null,
     isAdmin: (s) => s.user?.role === 'ADMIN' || s.user?.role === 'SUPER_ADMIN',
     isSuper: (s) => s.user?.role === 'SUPER_ADMIN',
-    isLeader: (s) =>
-      s.user?.role === 'SUPER_ADMIN' ||
-      (s.user?.role === 'ADMIN' && s.user?.adminSubRole === 'LEADER'),
-    // 原型中的 backend 角色：teacher / leader / super
+    // 后台角色：admin（管理员）/ super（超级管理员）
     backendRole: (s): string => {
       if (s.user?.role === 'SUPER_ADMIN') return 'super';
-      if (s.user?.role === 'ADMIN') return s.user?.adminSubRole === 'LEADER' ? 'leader' : 'teacher';
-      return 'teacher';
+      return 'admin';
     },
     // 头像旁角色标签样式（原型 badge 映射）
     roleBadgeClass: (s): string => {
@@ -38,8 +34,8 @@ export const useAuthStore = defineStore('auth', {
       const u = s.user;
       if (!u) return '';
       if (u.role === 'SUPER_ADMIN') return '超级管理员';
-      if (u.role === 'ADMIN') return u.adminSubRole === 'LEADER' ? '领导 · 管理员' : '老师 · 管理员';
-      return '学生 · 普通';
+      if (u.role === 'ADMIN') return '管理员';
+      return '用户';
     },
   },
   actions: {

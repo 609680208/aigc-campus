@@ -30,12 +30,6 @@
         </nav>
         <div class="header-right">
           <template v-if="auth.user">
-            <el-tooltip content="当前可用算力点数" placement="bottom">
-              <span class="quota-chip">
-                <el-icon><Lightning /></el-icon>
-                {{ auth.user.quotaBalance }} 点
-              </span>
-            </el-tooltip>
             <el-dropdown trigger="click" @command="handleCommand">
               <button class="user-info" type="button">
                 <span class="user-avatar">{{ auth.user.name[0] }}</span>
@@ -65,7 +59,7 @@
     <div class="notice">
       <div class="container">
         <el-icon><Bell /></el-icon>
-        <span>平台已接入「本地 + 云端」混合算力，支持文生图、图生图、文生视频、图生视频四大核心功能，以及创作画布、AI对话助手等智能工具。</span>
+        <span>平台支持文生图、图生图、文生视频、图生视频四大核心功能，以及创作画布、AI对话助手等智能工具。</span>
       </div>
     </div>
 
@@ -84,12 +78,6 @@
         </el-form-item>
         <el-form-item label="角色">
           <el-input :model-value="auth.roleLabel" disabled />
-        </el-form-item>
-        <el-form-item label="班级">
-          <el-input :model-value="auth.user?.class?.name || '—'" disabled />
-        </el-form-item>
-        <el-form-item label="算力余额">
-          <el-input :model-value="`${auth.user?.quotaBalance ?? 0} 点`" disabled />
         </el-form-item>
         <el-form-item label="姓名" required>
           <el-input v-model="profileName" maxlength="20" placeholder="请输入姓名" />

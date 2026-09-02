@@ -42,9 +42,8 @@
             </div>
           </div>
           <div class="chat-stats">
-            <span>当前点数: <b>{{ auth.user?.quotaBalance ?? 0 }}</b></span>
             <span>总tokens数: <b>{{ chatTokens }}</b></span>
-            <span>消耗点数: <b>{{ chatCost }}</b></span>
+            <span>消耗点数: <b>{{ chatCost }}</b>（仅展示）</span>
             <span>对话轮数: <b>{{ chatTurns }}</b></span>
           </div>
         </div>
@@ -207,7 +206,6 @@ async function sendChatMsg() {
     chatMessages.value[chatMessages.value.length - 1] = { role: 'assistant', content: reply };
     chatTokens.value += Math.round(reply.length / 2);
     chatCost.value += model.cost;
-    auth.fetchMe().catch(() => {});
   } catch (e: any) {
     const msg = e?.response?.data?.message;
     chatMessages.value[chatMessages.value.length - 1] = {

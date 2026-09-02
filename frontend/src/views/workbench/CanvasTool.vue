@@ -294,10 +294,8 @@ import '@vue-flow/core/dist/theme-default.css';
 import { ArrowLeft, Delete, DocumentAdd, UploadFilled, VideoPlay } from '@element-plus/icons-vue';
 import { ASPECT_RATIO_OPTIONS, RESOLUTION_OPTIONS, TOOLS } from '../../data/prototype';
 import { createWorkApi, listModelsApi } from '../../api';
-import { useAuthStore } from '../../stores/auth';
 
 const t = TOOLS.find((x) => x.out === 'canvas')!;
-const auth = useAuthStore();
 
 type NodeType = 'text' | 'image' | 'video' | 'audio' | 'upload';
 
@@ -612,7 +610,6 @@ async function generate(n: CNode) {
       n.status = 'error';
       n.error = work?.error || '生成结果为空，请稍后重试';
     }
-    auth.fetchMe().catch(() => {});
   } catch (e: any) {
     n.status = 'error';
     const msg = e?.response?.data?.message;

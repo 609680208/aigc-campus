@@ -29,8 +29,6 @@ export const changePasswordApi = (data: {
 export const listUsersApi = (params: any) =>
   http.get('/users', { params }).then((r) => r.data);
 
-export const listClassesApi = () => http.get('/users/classes').then((r) => r.data);
-
 export const createUserApi = (data: any) =>
   http.post('/users', data).then((r) => r.data);
 
@@ -39,9 +37,6 @@ export const importUsersApi = (users: any[]) =>
 
 export const updateUserApi = (id: string, data: any) =>
   http.patch(`/users/${id}`, data).then((r) => r.data);
-
-export const setQuotaApi = (id: string, amount: number, reason?: string) =>
-  http.patch(`/users/${id}/quota`, { amount, reason }).then((r) => r.data);
 
 // 模型
 export const listModelsApi = () => http.get('/models').then((r) => r.data);
@@ -60,18 +55,8 @@ export const workStatsApi = () => http.get('/works/stats').then((r) => r.data);
 // 后台管理
 export const adminStatsApi = () => http.get('/admin/stats').then((r) => r.data);
 export const auditListApi = () => http.get('/admin/audit').then((r) => r.data);
-export const approvalListApi = () => http.get('/admin/approvals').then((r) => r.data);
-/** 本人提交的配额申请 */
-export const myApprovalsApi = () => http.get('/admin/my-approvals').then((r) => r.data);
 /** 全平台用量统计（本地/云端、按功能分布） */
 export const adminUsageApi = () => http.get('/admin/usage').then((r) => r.data);
 /** 用户使用统计（创作次数/累计消耗/最近活跃） */
 export const adminUserStatsApi = (role?: string) =>
   http.get('/admin/user-stats', { params: role ? { role } : {} }).then((r) => r.data);
-export const createApprovalApi = (data: any) =>
-  http.post('/admin/approvals', data).then((r) => r.data);
-export const decideApprovalApi = (id: string, status: string) =>
-  http.patch(`/admin/approvals/${id}`, { status }).then((r) => r.data);
-export const adminClassesApi = () => http.get('/admin/classes').then((r) => r.data);
-export const createClassApi = (data: any) => http.post('/admin/classes', data).then((r) => r.data);
-export const quotaUsersApi = () => http.get('/admin/quota-users').then((r) => r.data);

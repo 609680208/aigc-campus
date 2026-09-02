@@ -1,9 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const {
-  PrismaClient,
-  UserRole,
-  AdminSubRole,
-} = require('@prisma/client');
+const { PrismaClient, UserRole } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
@@ -11,26 +7,30 @@ const prisma = new PrismaClient();
 async function main() {
   const pwd = (p) => bcrypt.hashSync(p, 10);
 
-  // 1. 班级（与原型一致的大学班级）
-  const classNames = ['计科2201', '计科2202', '传媒2301'];
-  for (const name of classNames) {
-    await prisma.class.upsert({
-      where: { name },
-      update: {},
-      create: { name, grade: name.replace(/\d+$/, '') },
-    });
+  // 1. 迁移旧演示账号（去学生/老师/领导化：统一改名为 用户/管理员）
+  const renames = [
+    ['student', 'user'],
+    ['student2', 'user2'],
+    ['student3', 'user3'],
+    ['teacher', 'manager'],
+    ['leader', 'manager2'],
+  ];
+  for (const [from, to] of renames) {
+    const old = await prisma.user.findUnique({ where: { username: from } });
+    if (!old) continue;
+    const conflict = await prisma.user.findUnique({ where: { username: to } });
+    if (conflict && conflict.id !== old.id) continue; // 目标账号已存在则跳过
+    await prisma.user.update({ where: { id: old.id }, data: { username: to } });
   }
-  const c1 = await prisma.class.findUnique({ where: { name: '计科2201' } });
-  const c2 = await prisma.class.findUnique({ where: { name: '计科2202' } });
 
-  // 2. 用户（与原型 USERS 一致）
+  // 2. 用户（三类角色：普通用户 / 管理员 / 超级管理员）
   const users = [
-    { username: 'student', password: '123456', name: '陈晓', role: UserRole.STUDENT, sub: null, classId: c1.id },
-    { username: 'student2', password: '123456', name: '李雷', role: UserRole.STUDENT, sub: null, classId: c1.id },
-    { username: 'student3', password: '123456', name: '韩梅梅', role: UserRole.STUDENT, sub: null, classId: c2.id },
-    { username: 'teacher', password: '123456', name: '张明', role: UserRole.ADMIN, sub: AdminSubRole.TEACHER },
-    { username: 'leader', password: '123456', name: '王校长', role: UserRole.ADMIN, sub: AdminSubRole.LEADER },
-    { username: 'admin', password: 'admin', name: '系统管理员', role: UserRole.SUPER_ADMIN, sub: null },
+    { username: 'user', password: '123456', name: '陈晓', role: UserRole.USER },
+    { username: 'user2', password: '123456', name: '李雷', role: UserRole.USER },
+    { username: 'user3', password: '123456', name: '韩梅梅', role: UserRole.USER },
+    { username: 'manager', password: '123456', name: '张明', role: UserRole.ADMIN },
+    { username: 'manager2', password: '123456', name: '王芳', role: UserRole.ADMIN },
+    { username: 'admin', password: 'admin', name: '系统管理员', role: UserRole.SUPER_ADMIN },
   ];
 
   for (const u of users) {
@@ -40,23 +40,19 @@ async function main() {
         password: pwd(u.password),
         name: u.name,
         role: u.role,
-        adminSubRole: u.sub,
-        classId: u.classId ?? null,
       },
       create: {
         username: u.username,
         password: pwd(u.password),
         name: u.name,
         role: u.role,
-        adminSubRole: u.sub,
-        classId: u.classId ?? null,
-        quotaBalance: u.role === UserRole.STUDENT ? 100 : 1000,
       },
     });
   }
 
   // 3. 模型配置（与 huobao-drama 项目实际配置对齐：中转站 8083 文本/图片 + ComfyUI 视频/配音；
   //    按要求不配置 seedance / 可灵，视频仅配置一个 minimax-h3）
+  //    cost 仅用于前端展示「单次消耗积分」，实际计费在中转站算力平台侧
   //    注意：中转站 glm-5.2 渠道实测被映射到 deepseek-v4-flash（2026-08-20 验证），
   //    已替换为实测身份一致的 Qwen3.6-27B；如中转站修复 GLM 渠道可再换回
   const RELAY_BASE = 'http://118.195.196.120:8083/v1';

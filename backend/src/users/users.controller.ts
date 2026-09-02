@@ -19,15 +19,8 @@ export class UsersController {
   list(
     @Query('role') role?: string,
     @Query('keyword') keyword?: string,
-    @Query('classId') classId?: string,
   ) {
-    return this.users.listUsers({ role, keyword, classId });
-  }
-
-  @Get('classes')
-  @Roles('ADMIN', 'SUPER_ADMIN')
-  classes() {
-    return this.users.listClasses();
+    return this.users.listUsers({ role, keyword });
   }
 
   @Post()
@@ -53,15 +46,5 @@ export class UsersController {
     @CurrentUser() user: any,
   ) {
     return this.users.updateUser(id, body, user);
-  }
-
-  @Patch(':id/quota')
-  @Roles('ADMIN', 'SUPER_ADMIN')
-  setQuota(
-    @Param('id') id: string,
-    @Body() body: { amount: number; reason?: string },
-    @CurrentUser() user: any,
-  ) {
-    return this.users.setQuota(id, body.amount, body.reason, user);
   }
 }

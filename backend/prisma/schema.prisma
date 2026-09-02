@@ -8,14 +8,9 @@ datasource db {
 }
 
 enum UserRole {
-  STUDENT
+  USER
   ADMIN
   SUPER_ADMIN
-}
-
-enum AdminSubRole {
-  TEACHER
-  LEADER
 }
 
 enum ModelType {
@@ -54,11 +49,7 @@ model User {
   username     String        @unique
   password     String
   name         String
-  role         UserRole      @default(STUDENT)
-  adminSubRole AdminSubRole?
-  classId      String?
-  class        Class?        @relation(fields: [classId], references: [id])
-  quotaBalance Int           @default(100)
+  role         UserRole      @default(USER)
   // ----- OPC 平台对接字段 -----
   opcUserId    String?       @unique // OPC 平台用户 ID（注册时同步创建）
   ssoToken     String?       @unique // 我方签发的永久 SSO token，随 SSO 链接校验
@@ -66,19 +57,9 @@ model User {
   teamId       String?       // OPC 团队 ID
   teamTaskId   String?       // OPC 任务 ID（最近一次 SSO 带入）
   works        Work[]
-  quotaLogs    QuotaLog[]
   auditLogs    AuditLog[]
-  approvals    Approval[]    @relation("requestedBy")
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-}
-
-model Class {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  grade     String?
-  createdAt DateTime @default(now())
-  students  User[]
 }
 
 model Model {
@@ -117,17 +98,6 @@ model Work {
   @@index([userId])
 }
 
-model QuotaLog {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  amount    Int
-  reason    String
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-}
-
 model AuditLog {
   id        String   @id @default(cuid())
   userId    String
@@ -139,14 +109,3 @@ model AuditLog {
   @@index([createdAt])
 }
 
-model Approval {
-  id          String   @id @default(cuid())
-  requesterId String
-  requester   User     @relation("requestedBy", fields: [requesterId], references: [id])
-  approverId  String?
-  type        String
-  amount      Int      @default(0)
-  reason      String?
-  status      String   @default("PENDING")
-  createdAt   DateTime @default(now())
-}

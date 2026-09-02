@@ -121,7 +121,7 @@
                 <div class="gen-status">{{ genStatus }}（已用时 {{ elapsedText }}）</div>
               </div>
               <div class="gen-meta">
-                模型：{{ curModel?.name }} ｜ 调度节点：{{ node }}（{{ curModel?.loc === 'CLOUD' ? '云端' : '本地' }}）<br>预计消耗：{{ curModel?.cost }} 算力点
+                模型：{{ curModel?.name }} ｜ 调度节点：{{ node }}（{{ curModel?.loc === 'CLOUD' ? '云端' : '本地' }}）<br>预计消耗：{{ curModel?.cost }} 积分（仅展示，计费在中转站平台）
               </div>
             </template>
             <div v-if="genError" class="gen-error">{{ genError }}</div>
@@ -147,8 +147,8 @@
               <div class="result-meta">
                 <span>类型：{{ t.out === 'video' ? '视频' : '图片' }}</span>
                 <span v-if="taskId">任务编号：{{ taskId }}</span>
-                <span>调度：{{ curModel?.loc === 'CLOUD' ? '云端弹性算力' : '本地算力池' }}</span>
-                <span>消耗：{{ curModel?.cost }} 算力点</span>
+                <span>调度：{{ curModel?.loc === 'CLOUD' ? '云端' : '本地' }}</span>
+                <span>消耗：{{ curModel?.cost }} 积分</span>
               </div>
             </template>
           </div>
@@ -160,8 +160,21 @@
         <div class="case-grid">
           <div v-for="c in t.cases" :key="c.t" class="case-card">
             <div class="case-thumb">
-              <img loading="lazy" :src="IMG_API(c.cover)" :alt="c.t">
-              <div v-if="t.out === 'video'" class="case-play">▶</div>
+              <template v-if="c.video">
+                <video
+                  :src="c.video"
+                  :poster="c.cover || undefined"
+                  muted
+                  loop
+                  playsinline
+                  preload="metadata"
+                  @click="toggleCaseVideo"
+                  @play="onCasePlayState"
+                  @pause="onCasePlayState"
+                ></video>
+                <div class="case-play" @click="toggleCaseVideo">▶</div>
+              </template>
+              <img v-else loading="lazy" :src="c.cover" :alt="c.t">
             </div>
             <div class="case-body">
               <div class="case-title">{{ c.t }}</div>
@@ -181,10 +194,8 @@ import { useRoute } from 'vue-router';
 import { Download } from '@element-plus/icons-vue';
 import { IMG_API, TOOLS, outTypeName } from '../../data/prototype';
 import { listModelsApi, createWorkApi } from '../../api';
-import { useAuthStore } from '../../stores/auth';
 
 const route = useRoute();
-const auth = useAuthStore();
 
 const t = computed(() => TOOLS.find((x) => x.id === Number(route.params.id)) || TOOLS[0]);
 
@@ -233,7 +244,7 @@ function wbModelHint() {
   }
   if (!m) return;
   costHint.value =
-    `⚡ 当前模型：<b>${m.name}</b> ｜ 单次约 <b>${m.cost} 算力点</b> ｜ 调度至 <b>${m.loc === 'CLOUD' ? '云端弹性算力' : '本地算力池'}</b>，可在「后台管理」查看创作记录。`;
+    `⚡ 当前模型：<b>${m.name}</b> ｜ 单次约 <b>${m.cost} 积分</b>（仅展示）｜ 调度至 <b>${m.loc === 'CLOUD' ? '云端' : '本地'}</b>，可在「后台管理」查看创作记录。`;
 }
 
 function onFilePicked(file: any, idx: number) {
@@ -257,6 +268,20 @@ function useCase(p: string) {
   const idx = t.value.inputs.findIndex((i) => i.type === 'textarea');
   if (idx >= 0) values.value[idx] = p;
   window.scrollTo(0, 0);
+}
+
+/** 案例视频：点击播放 / 暂停 */
+function toggleCaseVideo(e: Event) {
+  const v = (e.target as HTMLElement).closest('.case-thumb')?.querySelector('video');
+  if (!v) return;
+  if (v.paused) v.play().catch(() => {});
+  else v.pause();
+}
+
+/** 播放时隐藏 ▶，暂停时显示 */
+function onCasePlayState(e: Event) {
+  const thumb = (e.target as HTMLElement).closest('.case-thumb');
+  if (thumb) thumb.classList.toggle('playing', (e.target as HTMLVideoElement).paused === false);
 }
 
 function resetState() {
@@ -309,8 +334,8 @@ async function startGenerate() {
   gen.value = true;
   genError.value = '';
   result.value = '';
-  genStatus.value = '⏳ 任务已提交，算力调度中…';
-  node.value = m.loc === 'CLOUD' ? 'CLOUD 弹性算力' : 'GPU 本地算力池';
+  genStatus.value = '⏳ 任务已提交，调度中…';
+  node.value = m.loc === 'CLOUD' ? 'CLOUD 云端节点' : 'GPU 本地节点';
   elapsed.value = 0;
 
   const isVideo = t.value.out === 'video';
@@ -327,7 +352,7 @@ async function startGenerate() {
   // 上游接口不返回真实进度百分比，不做数字进度条，用旋转加载 + 已耗时展示
   timer = setInterval(() => {
     elapsed.value += 1;
-    if (elapsed.value < 3) genStatus.value = '⏳ 任务已提交，算力调度中…';
+    if (elapsed.value < 3) genStatus.value = '⏳ 任务已提交，调度中…';
     else if (isVideo) genStatus.value = '🎬 视频渲染生成中，通常需要数分钟，请耐心等待…';
     else genStatus.value = '🎨 渲染生成中…';
   }, 1000);
@@ -343,7 +368,6 @@ async function startGenerate() {
     if (!result.value && !work?.resultText) {
       genError.value = '生成结果为空，请稍后重试';
     }
-    auth.fetchMe().catch(() => {});
   } catch (e: any) {
     const msg = e?.response?.data?.message;
     genError.value = typeof msg === 'string' ? msg : msg?.[0] || '生成失败，请稍后重试';

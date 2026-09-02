@@ -27,7 +27,6 @@ export class AuthService {
         sub: user.id,
         username: user.username,
         role: user.role,
-        adminSubRole: user.adminSubRole ?? null,
       },
       expiresIn ? { expiresIn } : undefined,
     );
@@ -57,7 +56,6 @@ export class AuthService {
   async me(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { class: true },
     });
     if (!user) throw new UnauthorizedException();
     return this.serialize(user);
@@ -107,8 +105,7 @@ export class AuthService {
         username,
         name: (dto.name || username).trim(),
         password: bcrypt.hashSync(randomBytes(16).toString('hex'), 10),
-        role: 'STUDENT',
-        quotaBalance: 100,
+        role: 'USER',
         opcUserId,
         ssoToken: randomBytes(24).toString('hex'),
         apiKey: dto.apiKey || null,

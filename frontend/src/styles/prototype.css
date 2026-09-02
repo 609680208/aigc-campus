@@ -263,7 +263,9 @@ header {
 .case-card { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; }
 .case-thumb { position: relative; background: #0d0d12; }
 .case-thumb img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
-.case-thumb .case-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 26px; background: rgba(0,0,0,.18); }
+.case-thumb video { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; cursor: pointer; }
+.case-thumb .case-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 26px; background: rgba(0,0,0,.18); transition: opacity .2s; cursor: pointer; }
+.case-thumb.playing .case-play { opacity: 0; }
 .case-body { padding: 14px 16px; }
 .case-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
 .case-prompt { font-size: 12px; color: var(--gray); line-height: 1.65; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }

@@ -8,7 +8,6 @@
           <span><b>{{ TOOLS.length }}</b>款功能</span>
           <span><b>4</b>大类别</span>
           <span><b>{{ statsTotal }}</b>次累计创作</span>
-          <span v-if="auth.user"><b>{{ auth.user.quotaBalance }}</b>点可用算力</span>
         </div>
         <div class="search-row">
           <el-input
@@ -81,10 +80,8 @@ import {
   CATS, TOOLS, fmt, toolWorkType, type Tool,
 } from '../../data/prototype';
 import { workStatsApi } from '../../api';
-import { useAuthStore } from '../../stores/auth';
 
 const router = useRouter();
-const auth = useAuthStore();
 const curCat = ref('all');
 const curKw = ref('');
 const kw = ref('');
