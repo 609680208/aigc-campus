@@ -318,5 +318,6 @@ sudo docker exec aigc-backend sh -c "wget -qO- http://localhost:3000/api/models 
 | 2026-08-25 | 最终方案：域名 `aigc.xfsk.org.cn` + 宿主机 Nginx 80 端口反代 → Docker `127.0.0.1:8088`，无需开放额外端口 |
 | 2026-08-25 | Nginx 配置 `/usr/local/nginx/conf.d/aigc-campus.conf`，Docker 端口绑定 `127.0.0.1:8088:80` |
 | 2026-08-25 | 待办：管理员配置 DNS `aigc.xfsk.org.cn` → `118.195.222.159` |
+| 2026-09-02 | 迭代发版：重建双镜像上传部署；服务器旧库含老结构（STUDENT 角色数据/废弃字段表），后端 db push 因数据丢失确认卡重启循环，通过 SQL 先迁移角色数据（STUDENT→USER）+ `prisma db push --accept-data-loss` 手动同步 schema 解决；三容器恢复正常，域名验证 200 |
 
 **当前访问地址：`http://aigc.xfsk.org.cn`**（DNS 生效后即可访问）
